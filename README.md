@@ -5,12 +5,17 @@ This project is an adaptation of [OCR_tablenet by Tomás Sosorio](https://github
 This project is currently in the phase of adaptation and restructuring. While it is heavily based on OCR_tablenet by Tomás Sosorio, the names and overall code structure are in the process of being modified and adapted. The transition is being done in phases.
 
 
-Marmot.py: This script handles the data loading and preprocessing. It reads images and their corresponding XML labels to create table and column masks.
-Tablenet.py: This script contains the TableNet model architecture and the training, validation, and test steps.
-train.py: This script is the main driver for training the model. It sets up the training environment, including data loading, model initialization, and training settings.
-predict.py: This script is used for making predictions on new images. It applies the trained model to detect tables and columns in the images.
-visualize.py: This script uses the trained model to make predictions and then draws bounding boxes around the predicted table and column areas. The annotated images are saved in a specified output folder.
-Prerequisites
+**Marmot.py:** This script handles the data loading and preprocessing. It reads images and their corresponding XML labels to create table and column masks.
+
+**Tablenet.py:** This script contains the TableNet model architecture and the training, validation, and test steps.
+
+**train.py:** This script is the main driver for training the model. It sets up the training environment, including data loading, model initialization, and training settings.
+
+**predict.py:** This script is used for making predictions on new images. It applies the trained model to detect tables and columns in the images.
+
+**visualize.py:** This script uses the trained model to make predictions and then draws bounding boxes around the predicted table and column areas. The annotated images are saved in a specified output folder.
+
+**Prerequisites**
 Python 3.x
 PyTorch
 PyTorch Lightning
