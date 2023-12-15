@@ -8,6 +8,9 @@ import albumentations as album
 from albumentations.pytorch.transforms import ToTensorV2
 from PIL import Image
 from tablenet import TableNetModule
+import torch
+from albumentations import Compose
+
 
 """This script performs table and column detection on the given set of images. The script uses a pre-trained TableNet model to predict the locations of tables and columns 
 in each image. It then draws bounding boxes around the predicted table and column areas and saves the annotated 
@@ -17,10 +20,9 @@ The script is designed to process multiple images located in a given folder. It 
 transformations and OpenCV for drawing bounding boxes.
 """
 def draw_lines(image, mask, color):
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
     for contour in contours:
         cv2.drawContours(image, [contour], 0, color, 2)
-
 
 class Predict:
     def __init__(self, checkpoint_path: str, transforms: Compose, threshold: float = 0.5, per: float = 0.005):

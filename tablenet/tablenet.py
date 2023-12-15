@@ -139,6 +139,10 @@ class TableNet(nn.Module):
             batch_norm (bool): Select VGG with or without batch normalization.
         """
         super().__init__()
+        if batch_norm:
+            self.vgg = vgg19_bn(pretrained=True).features
+        else:
+            self.vgg = vgg19(pretrained=True).features
         self.vgg = vgg19(pretrained=True).features if not batch_norm else vgg19_bn(pretrained=True).features
         self.layers = [18, 27] if not batch_norm else [26, 39]
         self.model = nn.Sequential(nn.Conv2d(512, 512, kernel_size=1),
@@ -263,7 +267,7 @@ def binary_mean_iou(inputs, targets):
     output = (inputs > 0).int()
 
     if output.shape != targets.shape:
-        targets = torch.squeeze(targets, 1)
+        targets = targets.view_as(output)
 
     intersection = (targets * output).sum()
 

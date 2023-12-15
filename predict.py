@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 from typing import List
-
+import torch
 import click
 import numpy as np
 import pandas as pd
@@ -135,7 +135,8 @@ def predict(image_path: str, model_weights: str) -> List[pd.DataFrame]:
     pred = Predict(model_weights, transforms)
 
     image = Image.open(image_path)
-    print(pred.predict(image))
+    tables = pred.predict(image)
+    return tables
 
 
 if __name__ == '__main__':

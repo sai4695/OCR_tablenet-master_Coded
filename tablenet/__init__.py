@@ -1,6 +1,6 @@
 """Utilities for TableNet."""
 
-from .marmot import MarmotDataModule
+from .marmot import AuditImageDataModule
 from .tablenet import TableNetModule
 
-__all__ = ['MarmotDataModule', 'TableNetModule']
+__all__ = ['AuditImageDataModule', 'TableNetModule']

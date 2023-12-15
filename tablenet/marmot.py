@@ -10,27 +10,31 @@ import xml.etree.ElementTree as ET
 
 
 def create_mask_from_xml(xml_path, image_shape):
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
-    table_mask = np.zeros(image_shape[:2], dtype=np.uint8)
-    column_mask = np.zeros(image_shape[:2], dtype=np.uint8)
+    try:
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        table_mask = np.zeros(image_shape[:2], dtype=np.uint8)
+        column_mask = np.zeros(image_shape[:2], dtype=np.uint8)
 
-    for obj in root.iter('object'):
-        name = obj.find('name').text
-        xmin = int(obj.find('bndbox').find('xmin').text)
-        ymin = int(obj.find('bndbox').find('ymin').text)
-        xmax = int(obj.find('bndbox').find('xmax').text)
-        ymax = int(obj.find('bndbox').find('ymax').text)
+        for obj in root.iter('object'):
+            name = obj.find('name').text
+            xmin = int(obj.find('bndbox').find('xmin').text)
+            ymin = int(obj.find('bndbox').find('ymin').text)
+            xmax = int(obj.find('bndbox').find('xmax').text)
+            ymax = int(obj.find('bndbox').find('ymax').text)
 
-        if name == 'table':
-            cv2.rectangle(table_mask, (xmin, ymin), (xmax, ymax), 1, -1)
-        elif name == 'column':
-            cv2.rectangle(column_mask, (xmin, ymin), (xmax, ymax), 1, -1)
+            if name == 'table':
+                cv2.rectangle(table_mask, (xmin, ymin), (xmax, ymax), 1, -1)
+            elif name == 'column':
+                cv2.rectangle(column_mask, (xmin, ymin), (xmax, ymax), 1, -1)
 
-    return table_mask, column_mask
+        return table_mask, column_mask
+    except ET.ParseError:
+        raise ValueError(f"Could not parse XML: {xml_path}")
 
 
-class MarmotDataset(Dataset):
+
+class AuditImageDataset(Dataset):
     def __init__(self, data: List[Path], transforms: Compose = None):
         self.data = data
         self.transforms = transforms
@@ -42,7 +46,8 @@ class MarmotDataset(Dataset):
         sample_id = self.data[item].stem
         image_path = self.data[item].parent.parent.joinpath("labeled_images", sample_id + ".png")
         xml_path = self.data[item].parent.parent.joinpath("labels", sample_id + ".xml")
-
+        if not os.path.exists(xml_path):
+            raise FileNotFoundError(f"XML file does not exist: {xml_path}")
         image = np.array(Image.open(image_path))
 
         # Create masks using the function
@@ -62,7 +67,7 @@ class MarmotDataset(Dataset):
         return image, mask_table, mask_column
 
 
-class MarmotDataModule(pl.LightningDataModule):
+class AuditImageDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str = "./data", transforms_preprocessing: Compose = None,
                  transforms_augmentation: Compose = None, batch_size: int = 8, num_workers: int = 4):
         super().__init__()
@@ -80,9 +85,9 @@ class MarmotDataModule(pl.LightningDataModule):
         val_slice = slice(int(n_samples * 0.8), int(n_samples * 0.9))
         test_slice = slice(int(n_samples * 0.9), n_samples)
 
-        self.complaint_train = MarmotDataset(self.data[train_slice], transforms=self.transforms_augmentation)
-        self.complaint_val = MarmotDataset(self.data[val_slice], transforms=self.transforms_preprocessing)
-        self.complaint_test = MarmotDataset(self.data[test_slice], transforms=self.transforms_preprocessing)
+        self.complaint_train = AuditImageDataset(self.data[train_slice], transforms=self.transforms_augmentation)
+        self.complaint_val = AuditImageDataset(self.data[val_slice], transforms=self.transforms_preprocessing)
+        self.complaint_test = AuditImageDataset(self.data[test_slice], transforms=self.transforms_preprocessing)
 
     def train_dataloader(self, *args, **kwargs):
         return DataLoader(self.complaint_train, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
