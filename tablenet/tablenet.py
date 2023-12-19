@@ -12,17 +12,19 @@ EPSILON = 1e-15
 class TableNetModule(pl.LightningModule):
     """Pytorch Lightning Module for TableNet."""
 
-    def __init__(self, num_class: int = 1, batch_norm: bool = False):
+    def __init__(self, learning_rate, num_class: int = 1, batch_norm: bool = False):
         """Initialize TableNet Module.
 
         Args:
             num_class (int): Number of classes per point.
             batch_norm (bool): Select VGG with or without batch normalization.
         """
-        super().__init__()
+        super(TableNetModule, self).__init__()
+        self.save_hyperparameters()
         self.model = TableNet(num_class, batch_norm)
         self.num_class = num_class
         self.dice_loss = DiceLoss()
+
 
     def forward(self, batch):
         """Perform forward-pass.
@@ -110,7 +112,7 @@ class TableNetModule(pl.LightningModule):
         Returns: optimizer and scheduler for pytorch lighting.
 
         """
-        optimizer = optim.SGD(self.parameters(), lr=0.0001)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
         scheduler = {
             'scheduler': optim.lr_scheduler.OneCycleLR(optimizer,
                                                        max_lr=0.0001, steps_per_epoch=204, epochs=500, pct_start=0.1),

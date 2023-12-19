@@ -11,22 +11,24 @@ from tablenet import AuditImageDataModule
 from tablenet import TableNetModule
 
 # Objective function for Optuna
+
+
 def objective(trial):
     """ Hyperparameters to be tuned by Optuna """
     learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-1, log=True)
     batch_size = trial.suggest_categorical('batch_size', [16, 32, 64, 128])
 
     # data module and model with suggested hyperparameters
-    complaint_dataset = AuditImageDataModule(
+    complaint_dataset_test = AuditImageDataModule(
         data_dir=args.data_dir,
         transforms_preprocessing=transforms_preprocessing,
         transforms_augmentation=transforms_augmentation,
         batch_size=batch_size
     )
-    model = TableNetModule(batch_norm=False, learning_rate=learning_rate)
+    model_test = TableNetModule(learning_rate=learning_rate)
 
     # Set up the PyTorch Lightning trainer
-    trainer = pl.Trainer(
+    trainer_test = pl.Trainer(
         logger=False,  # Disable logging for hyperparameter optimization
         max_epochs=10,  # I haven't made this as a hyper parameter due to high computational cost involved.
         gpus=torch.cuda.device_count() if torch.cuda.is_available() else 0,
@@ -34,11 +36,12 @@ def objective(trial):
     )
 
     # Train the model
-    trainer.fit(model, datamodule=complaint_dataset)
+    trainer_test.fit(model_test, datamodule=complaint_dataset_test)
 
     # Return the performance metric to be optimized
-    validation_loss = trainer.callback_metrics['validation_loss'].item()
+    validation_loss = trainer_test.callback_metrics['validation_loss'].item()
     return validation_loss
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Training script for TableNet')
@@ -65,7 +68,7 @@ if __name__ == '__main__':
 
     # Run the Optuna optimization
     study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=50)  #This can be specified
+    study.optimize(objective, n_trials=50)  # This can be specified
 
     # best hyperparameters
     best_hyperparams = study.best_trial.params
@@ -95,7 +98,7 @@ if __name__ == '__main__':
             LearningRateMonitor(logging_interval='step')
         ]
     )
-
     # Train the final model
+
     trainer.fit(model, datamodule=complaint_dataset)
     trainer.test()

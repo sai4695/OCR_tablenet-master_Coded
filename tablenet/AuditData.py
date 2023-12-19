@@ -7,6 +7,7 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 import cv2
 import xml.etree.ElementTree as ET
+import os
 
 
 def create_mask_from_xml(xml_path, image_shape):
@@ -71,23 +72,39 @@ class AuditImageDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str = "./data", transforms_preprocessing: Compose = None,
                  transforms_augmentation: Compose = None, batch_size: int = 8, num_workers: int = 4):
         super().__init__()
-        self.data = list(Path(data_dir).rglob("*.png"))
+        self.data_dir = data_dir
         self.transforms_preprocessing = transforms_preprocessing
         self.transforms_augmentation = transforms_augmentation
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.setup()
+        # Initialize the datasets and data list to None
+        self.data = None
+        self.complaint_train = None
+        self.complaint_val = None
+        self.complaint_test = None
+
+    def prepare_data(self):
+        # Usually method should contain operations that might write to disk
+        # or that need to be done only from a single GPU in distributed settings.
+        pass
 
     def setup(self, stage: str = None):
-        n_samples = len(self.data)
-        self.data.sort()
-        train_slice = slice(0, int(n_samples * 0.8))
-        val_slice = slice(int(n_samples * 0.8), int(n_samples * 0.9))
-        test_slice = slice(int(n_samples * 0.9), n_samples)
+        if stage == 'fit' or stage is None:
+            self.data = list(Path(self.data_dir).rglob("*.png"))
+            self.data.sort()
+            n_samples = len(self.data)
+            train_slice = slice(0, int(n_samples * 0.8))
+            val_slice = slice(int(n_samples * 0.8), int(n_samples * 0.9))
+            self.complaint_train = AuditImageDataset(self.data[train_slice], transforms=self.transforms_augmentation)
+            self.complaint_val = AuditImageDataset(self.data[val_slice], transforms=self.transforms_preprocessing)
 
-        self.complaint_train = AuditImageDataset(self.data[train_slice], transforms=self.transforms_augmentation)
-        self.complaint_val = AuditImageDataset(self.data[val_slice], transforms=self.transforms_preprocessing)
-        self.complaint_test = AuditImageDataset(self.data[test_slice], transforms=self.transforms_preprocessing)
+            # Assign test dataset for use in dataloader(s)
+        if stage == 'test' or stage is None:
+            self.data = list(Path(self.data_dir).rglob("*.png"))
+            self.data.sort()
+            n_samples = len(self.data)
+            test_slice = slice(int(n_samples * 0.9), n_samples)
+            self.complaint_test = AuditImageDataset(self.data[test_slice], transforms=self.transforms_preprocessing)
 
     def train_dataloader(self, *args, **kwargs):
         return DataLoader(self.complaint_train, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
