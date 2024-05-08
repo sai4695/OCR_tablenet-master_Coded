@@ -44,8 +44,7 @@ python visualize.py --image_folder="./path/to/image/folder" --model_weights="./p
 **Evaluation Metrics**
 Dice Loss
 Intersection over Union (IoU)
-Acknowledgements
 
 
-This project is based on [OCR_tablenet by Tomás Sosorio](https://github.com/tomassosorio/OCR_tablenet). Special thanks to him for the original codebase.
+
 
